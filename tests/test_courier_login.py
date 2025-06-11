@@ -21,7 +21,9 @@ class TestCourierLogin:
     @allure.title('Успешная авторизация курьера')
     def test_login_courier_success(self, courier):
         login, password = courier
-        response = requests.post(self.BASE_URL, json={"login": login, "password": password})
+        payload = {"login": login, "password": password}
+        with allure.step(f"Отправка запроса на авторизацию курьера с данными: {payload}"):
+            response = requests.post(self.BASE_URL, json=payload)
         assert response.status_code == 200
         assert "id" in response.json()
 
@@ -32,14 +34,13 @@ class TestCourierLogin:
     @allure.title('Авторизация с неверными данными')
     def test_login_courier_wrong_credentials_fails(self, courier, wrong_field, wrong_value, expected_message):
         login, password = courier
-        # Подготовка payload с неверными данными
         payload = {"login": login, "password": password}
         if wrong_field == "password":
             payload["password"] = wrong_value
         elif wrong_field == "login":
             payload["login"] = wrong_value
-
-        response = requests.post(self.BASE_URL, json=payload)
+        with allure.step(f"Отправка запроса на авторизацию с неверным {wrong_field}: {payload}"):
+            response = requests.post(self.BASE_URL, json=payload)
         assert response.status_code == 404
         assert expected_message in response.json().get("message", "")
 
@@ -50,15 +51,14 @@ class TestCourierLogin:
     @allure.title('Авторизация без обязательного поля')
     def test_login_courier_missing_field_fails(self, courier, missing_field, remaining_payload):
         login, password = courier
-        # Обновляем payload динамически на основе фикстуры
         payload = {k: v for k, v in remaining_payload.items()}
         if missing_field == "login":
             payload["password"] = password
         elif missing_field == "password":
             payload["login"] = login
-
-        response = requests.post(self.BASE_URL, json=payload)
-        expected_status = [400, 504]  # Учитываем возможный 504 из-за нестабильности API
+        with allure.step(f"Отправка запроса на авторизацию без поля {missing_field}: {payload}"):
+            response = requests.post(self.BASE_URL, json=payload)
+        expected_status = [400, 504]
         assert response.status_code in expected_status, f"Ожидался код 400 или 504, получен {response.status_code}"
         if response.status_code == 400:
             assert "Недостаточно данных для входа" in response.json().get("message", "")

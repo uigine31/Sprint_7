@@ -24,7 +24,8 @@ class TestCourierCreate:
         login, password = courier
         payload = TEST_COURIER_DATA.copy()
         payload.update({"login": login, "password": password})
-        response = requests.post(self.BASE_URL, json=payload)
+        with allure.step(f"Отправка запроса на создание курьера с данными: {payload}"):
+            response = requests.post(self.BASE_URL, json=payload)
         assert response.status_code == EXPECTED_STATUS_DUPLICATE_COURIER
         assert EXPECTED_MESSAGE_DUPLICATE_COURIER in response.json().get("message", "")
 
@@ -33,7 +34,8 @@ class TestCourierCreate:
         login, password = courier
         payload = TEST_COURIER_DATA.copy()
         payload.update({"login": login, "password": password})
-        response = requests.post(self.BASE_URL, json=payload)
+        with allure.step(f"Отправка запроса на создание дубликата курьера с данными: {payload}"):
+            response = requests.post(self.BASE_URL, json=payload)
         assert response.status_code == EXPECTED_STATUS_DUPLICATE_COURIER
         assert EXPECTED_MESSAGE_DUPLICATE_COURIER in response.json().get("message", "")
 
@@ -44,13 +46,12 @@ class TestCourierCreate:
     @allure.title('Создание курьера без обязательного поля')
     def test_create_courier_missing_field_fails(self, courier, missing_field, remaining_payload):
         login, password = courier
-        # Обновляем payload динамически на основе фикстуры
         payload = {k: v for k, v in remaining_payload.items()}
         if missing_field == "login":
             payload["password"] = password
         elif missing_field == "password":
             payload["login"] = login
-
-        response = requests.post(self.BASE_URL, json=payload)
+        with allure.step(f"Отправка запроса на создание курьера без поля {missing_field} с данными: {payload}"):
+            response = requests.post(self.BASE_URL, json=payload)
         assert response.status_code == EXPECTED_STATUS_MISSING_FIELDS_COURIER
         assert EXPECTED_MESSAGE_MISSING_FIELDS_COURIER in response.json().get("message", "")
