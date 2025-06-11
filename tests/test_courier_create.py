@@ -22,7 +22,7 @@ class TestCourierCreate:
     @allure.title('Успешное создание курьера')
     def test_create_courier_success(self, courier):
         login, password = courier
-        payload = TEST_COURIER_DATA.copy()  # Используем копию
+        payload = TEST_COURIER_DATA.copy()
         payload.update({"login": login, "password": password})
         response = requests.post(self.BASE_URL, json=payload)
         assert response.status_code == EXPECTED_STATUS_DUPLICATE_COURIER
@@ -31,26 +31,26 @@ class TestCourierCreate:
     @allure.title('Нельзя создать двух одинаковых курьеров')
     def test_create_duplicate_courier_fails(self, courier):
         login, password = courier
-        payload = TEST_COURIER_DATA.copy()  # Используем копию
+        payload = TEST_COURIER_DATA.copy()
         payload.update({"login": login, "password": password})
         response = requests.post(self.BASE_URL, json=payload)
         assert response.status_code == EXPECTED_STATUS_DUPLICATE_COURIER
         assert EXPECTED_MESSAGE_DUPLICATE_COURIER in response.json().get("message", "")
 
-    @allure.title('Все обязательные поля нужны для создания курьера')
-    def test_create_courier_missing_fields_fails(self, courier):
+    @pytest.mark.parametrize("missing_field, remaining_payload", [
+        ("login", {"password": "test_password", "firstName": "Test"}),
+        ("password", {"login": "test_login", "firstName": "Test"})
+    ])
+    @allure.title('Создание курьера без обязательного поля')
+    def test_create_courier_missing_field_fails(self, courier, missing_field, remaining_payload):
         login, password = courier
+        # Обновляем payload динамически на основе фикстуры
+        payload = {k: v for k, v in remaining_payload.items()}
+        if missing_field == "login":
+            payload["password"] = password
+        elif missing_field == "password":
+            payload["login"] = login
 
-        # Без login
-        payload = TEST_COURIER_DATA.copy()
-        payload.pop("login")
-        response = requests.post(self.BASE_URL, json=payload)
-        assert response.status_code == EXPECTED_STATUS_MISSING_FIELDS_COURIER
-        assert EXPECTED_MESSAGE_MISSING_FIELDS_COURIER in response.json().get("message", "")
-
-        # Без password
-        payload = TEST_COURIER_DATA.copy()
-        payload.pop("password")
         response = requests.post(self.BASE_URL, json=payload)
         assert response.status_code == EXPECTED_STATUS_MISSING_FIELDS_COURIER
         assert EXPECTED_MESSAGE_MISSING_FIELDS_COURIER in response.json().get("message", "")
