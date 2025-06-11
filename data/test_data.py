@@ -1,3 +1,4 @@
+# data/test_data.py
 # Данные для создания заказа
 ORDER_DATA = {
     "firstName": "Test",
@@ -18,3 +19,16 @@ COLOR_VARIATIONS = [
     (["BLACK", "GREY"],),
     ([],)
 ]
+
+# Данные для создания курьера
+TEST_COURIER_DATA = {
+    "login": "test_login",
+    "password": "test_password",
+    "firstName": "Test"
+}
+
+# Ожидаемые ответы для создания курьера
+EXPECTED_STATUS_DUPLICATE_COURIER = 409
+EXPECTED_MESSAGE_DUPLICATE_COURIER = "Этот логин уже используется"
+EXPECTED_STATUS_MISSING_FIELDS_COURIER = 400
+EXPECTED_MESSAGE_MISSING_FIELDS_COURIER = "Недостаточно данных для создания учетной записи"
