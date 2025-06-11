@@ -1,22 +1,11 @@
 import requests
 import pytest
 import allure
-from utils.courier_utils import register_new_courier_and_return_login_password, delete_courier, login_courier
 from urls import BASE_URL, COURIER_ENDPOINT
 
 @allure.feature('Courier Creation')
 class TestCourierCreate:
     BASE_URL = f"{BASE_URL}{COURIER_ENDPOINT}"
-
-    @pytest.fixture
-    def courier(self):
-        login_pass = register_new_courier_and_return_login_password()
-        assert len(login_pass) == 3, "Курьер не создан"
-        login, password, _ = login_pass
-        courier_id = login_courier(login, password)
-        yield login, password
-        if courier_id:
-            delete_courier(courier_id)
 
     @allure.title('Успешное создание курьера')
     def test_create_courier_success(self, courier):
