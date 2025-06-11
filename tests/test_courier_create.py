@@ -2,10 +2,11 @@ import requests
 import pytest
 import allure
 from utils.courier_utils import register_new_courier_and_return_login_password, delete_courier, login_courier
+from urls import BASE_URL, COURIER_ENDPOINT
 
 @allure.feature('Courier Creation')
 class TestCourierCreate:
-    BASE_URL = 'https://qa-scooter.praktikum-services.ru/api/v1/courier'
+    BASE_URL = f"{BASE_URL}{COURIER_ENDPOINT}"
 
     @pytest.fixture
     def courier(self):
