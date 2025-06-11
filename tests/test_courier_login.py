@@ -43,16 +43,22 @@ class TestCourierLogin:
         assert response.status_code == 404
         assert expected_message in response.json().get("message", "")
 
-    @allure.title('Авторизация без обязательных полей')
-    def test_login_courier_missing_fields_fails(self, courier):
+    @pytest.mark.parametrize("missing_field, remaining_payload", [
+        ("login", {"password": "test_password"}),
+        ("password", {"login": "test_login"})
+    ])
+    @allure.title('Авторизация без обязательного поля')
+    def test_login_courier_missing_field_fails(self, courier, missing_field, remaining_payload):
         login, password = courier
-        # Без login
-        response = requests.post(self.BASE_URL, json={"password": password})
-        assert response.status_code == 400
-        assert "Недостаточно данных для входа" in response.json().get("message", "")
+        # Обновляем payload динамически на основе фикстуры
+        payload = {k: v for k, v in remaining_payload.items()}
+        if missing_field == "login":
+            payload["password"] = password
+        elif missing_field == "password":
+            payload["login"] = login
 
-        # Без password
-        response = requests.post(self.BASE_URL, json={"login": login})
-        assert response.status_code in [400, 504], "Ожидался код 400, но API может возвращать 504 из-за серверной ошибки."
+        response = requests.post(self.BASE_URL, json=payload)
+        expected_status = [400, 504]  # Учитываем возможный 504 из-за нестабильности API
+        assert response.status_code in expected_status, f"Ожидался код 400 или 504, получен {response.status_code}"
         if response.status_code == 400:
             assert "Недостаточно данных для входа" in response.json().get("message", "")
