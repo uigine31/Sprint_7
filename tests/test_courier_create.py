@@ -3,6 +3,9 @@ import pytest
 import allure
 from urls import BASE_URL, COURIER_ENDPOINT
 from data.test_data import TEST_COURIER_DATA, EXPECTED_STATUS_DUPLICATE_COURIER, EXPECTED_MESSAGE_DUPLICATE_COURIER, EXPECTED_STATUS_MISSING_FIELDS_COURIER, EXPECTED_MESSAGE_MISSING_FIELDS_COURIER
+import random
+import string
+
 from utils.courier_utils import delete_courier, login_courier, register_new_courier_and_return_login_password
 
 @allure.feature('Courier Creation')
@@ -19,15 +22,24 @@ class TestCourierCreate:
         if courier_id:
             delete_courier(courier_id)
 
+    def generate_unique_login(self, length=10):
+        """Генерирует уникальный логин."""
+        letters = string.ascii_lowercase
+        return ''.join(random.choice(letters) for _ in range(length))
+
     @allure.title('Успешное создание курьера')
-    def test_create_courier_success(self, courier):
-        login, password = courier
+    def test_create_courier_success(self):
+        unique_login = self.generate_unique_login()
         payload = TEST_COURIER_DATA.copy()
-        payload.update({"login": login, "password": password})
-        with allure.step(f"Отправка запроса на создание курьера с данными: {payload}"):
+        payload.update({
+            "login": unique_login,
+            "password": "test_password123",  # Используем фиксированный пароль для теста
+            "firstName": "TestUser"
+        })
+        with allure.step(f"Отправка запроса на создание нового курьера с данными: {payload}"):
             response = requests.post(self.BASE_URL, json=payload)
-        assert response.status_code == EXPECTED_STATUS_DUPLICATE_COURIER
-        assert EXPECTED_MESSAGE_DUPLICATE_COURIER in response.json().get("message", "")
+        assert response.status_code == 201
+        assert response.json().get("ok") is True
 
     @allure.title('Нельзя создать двух одинаковых курьеров')
     def test_create_duplicate_courier_fails(self, courier):
