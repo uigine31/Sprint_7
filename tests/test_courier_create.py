@@ -39,19 +39,16 @@ class TestCourierCreate:
         assert response.status_code == EXPECTED_STATUS_DUPLICATE_COURIER
         assert EXPECTED_MESSAGE_DUPLICATE_COURIER in response.json().get("message", "")
 
-    @pytest.mark.parametrize("missing_field, remaining_payload", [
-        ("login", {"password": "test_password", "firstName": "Test"}),
-        ("password", {"login": "test_login", "firstName": "Test"})
+    @pytest.mark.parametrize("test_name, payload", [
+        ("missing_login", lambda login, password: {"password": password, "firstName": "Test"}),
+        ("missing_password", lambda login, password: {"login": login, "firstName": "Test"})
     ])
     @allure.title('Создание курьера без обязательного поля')
-    def test_create_courier_missing_field_fails(self, courier, missing_field, remaining_payload):
+    def test_create_courier_missing_field_fails(self, courier, test_name, payload):
         login, password = courier
-        payload = {k: v for k, v in remaining_payload.items()}
-        if missing_field == "login":
-            payload["password"] = password
-        elif missing_field == "password":
-            payload["login"] = login
-        with allure.step(f"Отправка запроса на создание курьера без поля {missing_field} с данными: {payload}"):
-            response = requests.post(self.BASE_URL, json=payload)
+        # Вычисляем payload с реальными данными из фикстуры
+        updated_payload = payload(login, password)
+        with allure.step(f"Отправка запроса на создание курьера без поля ({test_name}): {updated_payload}"):
+            response = requests.post(self.BASE_URL, json=updated_payload)
         assert response.status_code == EXPECTED_STATUS_MISSING_FIELDS_COURIER
         assert EXPECTED_MESSAGE_MISSING_FIELDS_COURIER in response.json().get("message", "")
