@@ -27,37 +27,31 @@ class TestCourierLogin:
         assert response.status_code == 200
         assert "id" in response.json()
 
-    @pytest.mark.parametrize("wrong_field, wrong_value, expected_message", [
-        ("password", "wrongpass", "Учетная запись не найдена"),
-        ("login", "wronglogin", "Учетная запись не найдена")
+    @pytest.mark.parametrize("test_case, payload, expected_message", [
+        ("wrong_password", lambda login, password: {"login": login, "password": "wrongpass"}, "Учетная запись не найдена"),
+        ("wrong_login", lambda login, password: {"login": "wronglogin", "password": password}, "Учетная запись не найдена")
     ])
     @allure.title('Авторизация с неверными данными')
-    def test_login_courier_wrong_credentials_fails(self, courier, wrong_field, wrong_value, expected_message):
+    def test_login_courier_wrong_credentials_fails(self, courier, test_case, payload, expected_message):
         login, password = courier
-        payload = {"login": login, "password": password}
-        if wrong_field == "password":
-            payload["password"] = wrong_value
-        elif wrong_field == "login":
-            payload["login"] = wrong_value
-        with allure.step(f"Отправка запроса на авторизацию с неверным {wrong_field}: {payload}"):
-            response = requests.post(self.BASE_URL, json=payload)
+        # Вычисляем payload с реальными данными из фикстуры
+        updated_payload = payload(login, password)
+        with allure.step(f"Отправка запроса на авторизацию с неверным {test_case}: {updated_payload}"):
+            response = requests.post(self.BASE_URL, json=updated_payload)
         assert response.status_code == 404
         assert expected_message in response.json().get("message", "")
 
-    @pytest.mark.parametrize("missing_field, remaining_payload", [
-        ("login", {"password": "test_password"}),
-        ("password", {"login": "test_login"})
+    @pytest.mark.parametrize("test_case, payload", [
+        ("missing_login", lambda login, password: {"password": password}),
+        ("missing_password", lambda login, password: {"login": login})
     ])
     @allure.title('Авторизация без обязательного поля')
-    def test_login_courier_missing_field_fails(self, courier, missing_field, remaining_payload):
+    def test_login_courier_missing_field_fails(self, courier, test_case, payload):
         login, password = courier
-        payload = {k: v for k, v in remaining_payload.items()}
-        if missing_field == "login":
-            payload["password"] = password
-        elif missing_field == "password":
-            payload["login"] = login
-        with allure.step(f"Отправка запроса на авторизацию без поля {missing_field}: {payload}"):
-            response = requests.post(self.BASE_URL, json=payload)
+        # Вычисляем payload с реальными данными из фикстуры
+        updated_payload = payload(login, password)
+        with allure.step(f"Отправка запроса на авторизацию без поля {test_case}: {updated_payload}"):
+            response = requests.post(self.BASE_URL, json=updated_payload)
         expected_status = [400, 504]
         assert response.status_code in expected_status, f"Ожидался код 400 или 504, получен {response.status_code}"
         if response.status_code == 400:
